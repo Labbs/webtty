@@ -1,7 +1,6 @@
 package localcommand
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -209,7 +208,6 @@ func CatchAndTruncate(s string) string {
 				lines[i] = string("[TRUNCATED]")
 			}
 			if isBase64(line) {
-				fmt.Println("Base64 detected")
 				lines[i] = string("[TRUNCATED]")
 			}
 		}
