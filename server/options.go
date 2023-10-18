@@ -8,6 +8,7 @@ type Options struct {
 	ConfigFile          string
 	Address             string
 	Port                string
+	Path                string
 	PermitWrite         bool
 	EnableBasicAuth     bool
 	Credential          string
