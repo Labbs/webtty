@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/main tmux new -A -s ttyd bash"
+  bin = "./tmp/main -recording-url 'spendy.staging.spendesk.services' tmux new -A -s ttyd bash"
   cmd = "go build -o ./tmp/main ."
   delay = 0
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
