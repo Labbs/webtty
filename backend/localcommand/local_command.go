@@ -1,7 +1,6 @@
 package localcommand
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -115,7 +114,9 @@ func (lcmd *LocalCommand) Write(p []byte) (n int, err error) {
 	// 	return n, errLog
 	// }
 
-	go utils.PushRecording(truncate)
+	if utils.RecordingEnabled {
+		go utils.PushRecording(truncate)
+	}
 
 	lcmd.cmdBuffer = output
 
@@ -207,7 +208,6 @@ func CatchAndTruncate(s string) string {
 				lines[i] = string("[TRUNCATED]")
 			}
 			if isBase64(line) {
-				fmt.Println("Base64 detected")
 				lines[i] = string("[TRUNCATED]")
 			}
 		}
