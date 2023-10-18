@@ -29,6 +29,12 @@ func flags() []cli.Flag {
 			Value:       "8080",
 			Destination: &appOptions.Port,
 		}),
+		altsrc.NewStringFlag(&cli.StringFlag{
+			Name:        "path",
+			Usage:       "URL path to access the web terminal",
+			Value:       "/",
+			Destination: &appOptions.Path,
+		}),
 		altsrc.NewBoolFlag(&cli.BoolFlag{
 			Name:        "permit-write",
 			Usage:       "Permit clients to write to the TTY (BE CAREFUL)",
@@ -203,6 +209,13 @@ func flags() []cli.Flag {
 			EnvVars:     []string{"RECORDING_URL"},
 			Value:       "",
 			Destination: &utils.RecordingUrl,
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:        "recording-enabled",
+			Usage:       "Enable recording",
+			EnvVars:     []string{"RECORDING_ENABLED"},
+			Value:       true,
+			Destination: &utils.RecordingEnabled,
 		}),
 	}
 }
