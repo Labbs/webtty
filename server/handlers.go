@@ -188,6 +188,7 @@ func (server *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	indexVars := map[string]interface{}{
 		"title": titleBuf.String(),
+		"path":  server.options.Path,
 	}
 
 	indexBuf := new(bytes.Buffer)
