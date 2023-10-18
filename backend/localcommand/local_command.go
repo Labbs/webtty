@@ -115,7 +115,9 @@ func (lcmd *LocalCommand) Write(p []byte) (n int, err error) {
 	// 	return n, errLog
 	// }
 
-	go utils.PushRecording(truncate)
+	if utils.RecordingEnabled {
+		go utils.PushRecording(truncate)
+	}
 
 	lcmd.cmdBuffer = output
 
