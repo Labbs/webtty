@@ -4,22 +4,22 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
+	"os"
 	"regexp"
 	noesctmpl "text/template"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/elazarl/go-bindata-assetfs"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
 	"github.com/labbs/webtty/pkg/homedir"
-	"github.com/labbs/webtty/pkg/randomstring"
 	"github.com/labbs/webtty/webtty"
 )
 
@@ -42,7 +42,7 @@ func New(factory Factory, options *Options) (*Server, error) {
 	}
 	if options.IndexFile != "" {
 		path := homedir.Expand(options.IndexFile)
-		indexData, err = ioutil.ReadFile(path)
+		indexData, err = os.ReadFile(path)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to read custom index file at `%s`", path)
 		}
@@ -95,12 +95,7 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 
 	counter := newCounter(time.Duration(server.options.Timeout) * time.Second)
 
-	path := "/"
-	if server.options.EnableRandomUrl {
-		path = "/" + randomstring.Generate(server.options.RandomUrlLength) + "/"
-	}
-
-	handlers := server.setupHandlers(cctx, cancel, path, counter)
+	handlers := server.setupHandlers(cctx, cancel, server.options.Path, counter)
 	srv, err := server.setupHTTPServer(handlers)
 	if err != nil {
 		return errors.Wrapf(err, "failed to setup an HTTP server")
@@ -116,23 +111,18 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 	if server.options.Port == "0" {
 		log.Printf("Port number configured to `0`, choosing a random port")
 	}
-	hostPort := net.JoinHostPort(server.options.Address, server.options.Port)
-	listener, err := net.Listen("tcp", hostPort)
-	if err != nil {
-		return errors.Wrapf(err, "failed to listen at `%s`", hostPort)
-	}
+	// hostPort := net.JoinHostPort(server.options.Address, server.options.Port)
+	// listener, err := net.Listen("tcp", hostPort)
+	// if err != nil {
+	// 	return errors.Wrapf(err, "failed to listen at `%s`", hostPort)
+	// }
 
-	scheme := "http"
-	if server.options.EnableTLS {
-		scheme = "https"
-	}
-	host, port, _ := net.SplitHostPort(listener.Addr().String())
-	log.Printf("HTTP server is listening at: %s", scheme+"://"+host+":"+port+path)
-	if server.options.Address == "0.0.0.0" {
-		for _, address := range listAddresses() {
-			log.Printf("Alternative URL: %s", scheme+"://"+address+":"+port+path)
-		}
-	}
+	// scheme := "http"
+	// if server.options.EnableTLS {
+	// 	scheme = "https"
+	// }
+	// host, port, _ := net.SplitHostPort(listener.Addr().String())
+	// log.Printf("HTTP server is listening at: %s", scheme+"://"+host+":"+port+server.options.Path)
 
 	srvErr := make(chan error, 1)
 	go func() {
@@ -142,9 +132,11 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 			log.Printf("TLS crt file: " + crtFile)
 			log.Printf("TLS key file: " + keyFile)
 
-			err = srv.ServeTLS(listener, crtFile, keyFile)
+			// err = srv.ServeTLS(listener, crtFile, keyFile)
+			err = http.ListenAndServeTLS(fmt.Sprintf("%s:%s", server.options.Address, server.options.Port), crtFile, keyFile, handlers)
 		} else {
-			err = srv.Serve(listener)
+			// err = srv.Serve(listener)
+			err = http.ListenAndServe(fmt.Sprintf("%s:%s", server.options.Address, server.options.Port), handlers)
 		}
 		if err != nil {
 			srvErr <- err
