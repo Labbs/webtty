@@ -6,6 +6,7 @@ import { ConnectionFactory } from "./websocket";
 // @TODO remove these
 declare var gotty_auth_token: string;
 declare var gotty_term: string;
+declare var pathName: string;
 
 const elem = document.getElementById("terminal")
 
@@ -17,7 +18,11 @@ if (elem !== null) {
         term = new Xterm(elem);
     }
     const httpsEnabled = window.location.protocol == "https:";
-    const url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + window.location.pathname + 'ws';
+    var pathName = window.location.pathname;
+    if (pathName.slice(-1) != "/") {
+        pathName += "/";
+    }
+    const url = (httpsEnabled ? 'wss://' : 'ws://') + window.location.host + pathName + 'ws';
     const args = window.location.search;
     const factory = new ConnectionFactory(url, protocols);
     const wt = new WebTTY(term, factory, args, gotty_auth_token);
