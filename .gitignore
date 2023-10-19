@@ -21,3 +21,10 @@
 go.work
 
 *.log
+
+js/node_modules
+
+tmp/
+
+.vscode/
+.air.toml
