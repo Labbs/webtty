@@ -4,18 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"embed"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
+	"strings"
 	noesctmpl "text/template"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	assetfs "github.com/elazarl/go-bindata-assetfs"
+	// assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
@@ -23,35 +23,24 @@ import (
 	"github.com/labbs/webtty/webtty"
 )
 
+//go:embed static/*
+var assets embed.FS
+
+//go:embed templates/index.html
+var indexTemplate string
+
 // Server provides a webtty HTTP endpoint.
 type Server struct {
 	factory Factory
 	options *Options
 
 	upgrader      *websocket.Upgrader
-	indexTemplate *template.Template
 	titleTemplate *noesctmpl.Template
 }
 
 // New creates a new instance of Server.
 // Server will use the New() of the factory provided to handle each request.
 func New(factory Factory, options *Options) (*Server, error) {
-	indexData, err := Asset("static/index.html")
-	if err != nil {
-		panic("index not found") // must be in bindata
-	}
-	if options.IndexFile != "" {
-		path := homedir.Expand(options.IndexFile)
-		indexData, err = os.ReadFile(path)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read custom index file at `%s`", path)
-		}
-	}
-	indexTemplate, err := template.New("index").Parse(string(indexData))
-	if err != nil {
-		panic("index template parse failed") // must be valid
-	}
-
 	titleTemplate, err := noesctmpl.New("title").Parse(options.TitleFormat)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse window title format `%s`", options.TitleFormat)
@@ -78,7 +67,6 @@ func New(factory Factory, options *Options) (*Server, error) {
 			Subprotocols:    webtty.Protocols,
 			CheckOrigin:     originChekcer,
 		},
-		indexTemplate: indexTemplate,
 		titleTemplate: titleTemplate,
 	}, nil
 }
@@ -111,18 +99,6 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 	if server.options.Port == "0" {
 		log.Printf("Port number configured to `0`, choosing a random port")
 	}
-	// hostPort := net.JoinHostPort(server.options.Address, server.options.Port)
-	// listener, err := net.Listen("tcp", hostPort)
-	// if err != nil {
-	// 	return errors.Wrapf(err, "failed to listen at `%s`", hostPort)
-	// }
-
-	// scheme := "http"
-	// if server.options.EnableTLS {
-	// 	scheme = "https"
-	// }
-	// host, port, _ := net.SplitHostPort(listener.Addr().String())
-	// log.Printf("HTTP server is listening at: %s", scheme+"://"+host+":"+port+server.options.Path)
 
 	srvErr := make(chan error, 1)
 	go func() {
@@ -173,18 +149,16 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 }
 
 func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFunc, pathPrefix string, counter *counter) http.Handler {
-	staticFileHandler := http.FileServer(
-		&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"},
-	)
-
 	var siteMux = http.NewServeMux()
 	siteMux.HandleFunc(pathPrefix, server.handleIndex)
-	siteMux.Handle(pathPrefix+"js/", http.StripPrefix(pathPrefix, staticFileHandler))
-	siteMux.Handle(pathPrefix+"favicon.png", http.StripPrefix(pathPrefix, staticFileHandler))
-	siteMux.Handle(pathPrefix+"css/", http.StripPrefix(pathPrefix, staticFileHandler))
+	staticFS := http.FS(assets)
 
-	siteMux.HandleFunc(pathPrefix+"auth_token.js", server.handleAuthToken)
-	siteMux.HandleFunc(pathPrefix+"config.js", server.handleConfig)
+	var path string = pathPrefix
+	if path != "/" && !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+
+	siteMux.Handle(path+"static/", http.StripPrefix(path, http.FileServer(staticFS)))
 
 	siteHandler := http.Handler(siteMux)
 
@@ -198,7 +172,7 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 
 	wsMux := http.NewServeMux()
 	wsMux.Handle("/", siteHandler)
-	wsMux.HandleFunc(pathPrefix+"ws", server.generateHandleWS(ctx, cancel, counter))
+	wsMux.HandleFunc(path+"ws", server.generateHandleWS(ctx, cancel, counter))
 	siteHandler = http.Handler(wsMux)
 
 	return siteHandler
