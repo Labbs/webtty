@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync/atomic"
 
 	"github.com/gorilla/websocket"
@@ -88,6 +90,7 @@ func (server *Server) generateHandleWS(ctx context.Context, cancel context.Cance
 }
 
 func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn) error {
+
 	typ, initLine, err := conn.ReadMessage()
 	if err != nil {
 		return errors.Wrapf(err, "failed to authenticate websocket connection")
@@ -191,25 +194,17 @@ func (server *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		"path":  server.options.Path,
 	}
 
-	indexBuf := new(bytes.Buffer)
-	err = server.indexTemplate.Execute(indexBuf, indexVars)
+	if server.options.Path != "/" && !strings.HasSuffix(server.options.Path, "/") {
+		indexVars["path"] = server.options.Path + "/"
+	}
+
+	tmpl, err := template.New("index").Parse(indexTemplate)
 	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
+		http.Error(w, "could not parse the embedded template", http.StatusInternalServerError)
 		return
 	}
 
-	w.Write(indexBuf.Bytes())
-}
-
-func (server *Server) handleAuthToken(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/javascript")
-	// @TODO hashing?
-	w.Write([]byte("var gotty_auth_token = '" + server.options.Credential + "';"))
-}
-
-func (server *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/javascript")
-	w.Write([]byte("var gotty_term = '" + server.options.Term + "';"))
+	tmpl.Execute(w, indexVars)
 }
 
 // titleVariables merges maps in a specified order.
