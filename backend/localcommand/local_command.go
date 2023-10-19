@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
-	"github.com/labbs/webtty/utils"
 	"github.com/pkg/errors"
 )
 
@@ -66,15 +65,15 @@ func New(command string, argv []string, options ...Option) (*LocalCommand, error
 
 	// When the process is closed by the user,
 	// close pty so that Read() on the pty breaks with an EOF.
-	go func() {
-		defer func() {
-			lcmd.pty.Close()
-			lcmd.cmd.Cancel()
-			close(lcmd.ptyClosed)
-		}()
+	// go func() {
+	// 	defer func() {
+	// 		lcmd.pty.Close()
+	// 		lcmd.cmd.Cancel()
+	// 		close(lcmd.ptyClosed)
+	// 	}()
 
-		lcmd.cmd.Wait()
-	}()
+	// 	lcmd.cmd.Wait()
+	// }()
 
 	return lcmd, nil
 }
@@ -105,18 +104,18 @@ func (lcmd *LocalCommand) Write(p []byte) (n int, err error) {
 
 	output := GetTerminalState()
 
-	diff, _ := strings.CutPrefix(output, lcmd.cmdBuffer)
+	// diff, _ := strings.CutPrefix(output, lcmd.cmdBuffer)
 
-	truncate := CatchAndTruncate(diff)
+	// truncate := CatchAndTruncate(diff)
 
 	// _, errLog := lcmd.logFile.WriteString(truncate)
 	// if errLog != nil {
 	// 	return n, errLog
 	// }
 
-	if utils.RecordingEnabled {
-		go utils.PushRecording(truncate)
-	}
+	// if utils.RecordingEnabled {
+	// 	go utils.PushRecording(truncate)
+	// }
 
 	lcmd.cmdBuffer = output
 

@@ -73,7 +73,6 @@ func (wt *WebTTY) Run(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to send initializing message")
 	}
-
 	errs := make(chan error, 2)
 
 	go func() {
