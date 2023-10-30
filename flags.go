@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/labbs/webtty/backend/localcommand"
 	"github.com/labbs/webtty/utils"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
@@ -216,6 +217,12 @@ func flags() []cli.Flag {
 			EnvVars:     []string{"RECORDING_ENABLED"},
 			Value:       true,
 			Destination: &utils.RecordingEnabled,
+		}),
+		altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+			Name:        "blacklist",
+			Usage:       "Blacklist of word to be censored",
+			EnvVars:     []string{"BLACKLIST"},
+			Destination: &localcommand.BlackList,
 		}),
 	}
 }
