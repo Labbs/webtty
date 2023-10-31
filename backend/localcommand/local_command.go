@@ -12,12 +12,15 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/pkg/errors"
+	"github.com/urfave/cli/v2"
 )
 
 const (
 	DefaultCloseSignal  = syscall.SIGINT
 	DefaultCloseTimeout = 10 * time.Second
 )
+
+var BlackList cli.StringSlice
 
 type LocalCommand struct {
 	command string
@@ -195,13 +198,9 @@ func GetTerminalState() string {
 }
 
 func CatchAndTruncate(s string) string {
-	var blackList []string = []string{
-		"password",
-	}
-
 	lines := strings.Split(s, "\n")
 
-	for _, blackListed := range blackList {
+	for _, blackListed := range BlackList.Value() {
 		for i, line := range lines {
 			if strings.Contains(line, blackListed) {
 				lines[i] = string("[TRUNCATED]")
