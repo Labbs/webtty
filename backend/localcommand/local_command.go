@@ -11,6 +11,7 @@ import (
 	"unsafe"
 
 	"github.com/creack/pty"
+	"github.com/labbs/webtty/utils"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -107,18 +108,18 @@ func (lcmd *LocalCommand) Write(p []byte) (n int, err error) {
 
 	output := GetTerminalState()
 
-	// diff, _ := strings.CutPrefix(output, lcmd.cmdBuffer)
+	diff, _ := strings.CutPrefix(output, lcmd.cmdBuffer)
 
-	// truncate := CatchAndTruncate(diff)
+	truncate := CatchAndTruncate(diff)
 
 	// _, errLog := lcmd.logFile.WriteString(truncate)
 	// if errLog != nil {
 	// 	return n, errLog
 	// }
 
-	// if utils.RecordingEnabled {
-	// 	go utils.PushRecording(truncate)
-	// }
+	if utils.RecordingEnabled {
+		go utils.PushRecording(truncate)
+	}
 
 	lcmd.cmdBuffer = output
 
