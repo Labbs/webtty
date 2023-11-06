@@ -19,7 +19,7 @@ func PushRecording(data string) {
 		log.Println(err)
 	}
 
-	recording := []byte(`{"spendy_host":"` + hostname + `","data":"` + data + `"}`)
+	recording := []byte(data)
 	var url string = "https://" + RecordingUrl + "/recording/" + hostname
 
 	r, err := http.NewRequest("POST", url, bytes.NewBuffer(recording))
