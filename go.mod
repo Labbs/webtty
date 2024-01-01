@@ -5,11 +5,10 @@ go 1.21.2
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/creack/pty v1.1.18
-	github.com/elazarl/go-bindata-assetfs v1.0.1
 	github.com/fatih/structs v1.1.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/urfave/cli/v2 v2.25.7
+	github.com/urfave/cli/v2 v2.27.1
 )
 
 require (
